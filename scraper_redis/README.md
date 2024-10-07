@@ -19,7 +19,7 @@ Once this has been build you will need to run it:
 
 ### Useful Docker commands
 
-Stop Docker : docker stop rummage_scraper_redis 
-Remove Docker container : docker rm rummage_scraper_redis 
-Remove Docker image : docker rmi rummage_scraper_redis 
-Get Docker Logs : docker logs rummage_scraper_redis 
+Stop Docker : docker stop rummage_scraper_redis  
+Remove Docker container : docker rm rummage_scraper_redis  
+Remove Docker image : docker rmi rummage_scraper_redis  
+Get Docker Logs : docker logs rummage_scraper_redis  
