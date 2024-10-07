@@ -14,8 +14,8 @@ Once this has been build you will need to run it:
 `docker run --name rummage_scraper_redis -d -e REDIS_PASSWORD=<PASSWORD> -p 6379:6379 -v <REDIS_DATA_PATH>:/data rummage_scraper_redis`
 
 > [!NOTE]
-> PASSWORD : The password that will be required for authentication purposes
-> REDIS_DATA_PATH : The full path to the directory where redis data is stored (e.g. /rummage/redis_data)
+> PASSWORD : The password that will be required for authentication purposes  
+> REDIS_DATA_PATH : The full path to the directory where redis data is stored (e.g. /rummage/redis_data)  
 
 ### Useful Docker commands
 
