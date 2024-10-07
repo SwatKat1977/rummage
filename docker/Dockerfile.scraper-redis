@@ -5,6 +5,6 @@ FROM redis:7.4
 ENV REDIS_PASSWORD=redis_password_2024
 
 # Copy the custom Rummage configuration file into the Docker image.
-COPY redis/redis.conf /usr/local/etc/redis/redis.conf
+COPY scraper_redis/redis.conf /usr/local/etc/redis/redis.conf
 
 CMD ["sh", "-c", "redis-server /usr/local/etc/redis/redis.conf --requirepass $REDIS_PASSWORD"]
