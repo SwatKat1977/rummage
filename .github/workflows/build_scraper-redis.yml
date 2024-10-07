@@ -28,8 +28,15 @@ on:
 
 jobs:
     build:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         steps:
+
+        - name: Set PUSH_TO_REGISTRY for scheduled run
+          if: github.event_name == 'schedule'
+          run: echo "PUSH_TO_REGISTRY='true'" >> $GITHUB_ENV
+
+        - name: Set up QEMU
+          uses: docker/setup-qemu-action@v3
 
         - name: Set up Docker Buildx
           uses: docker/setup-buildx-action@v2
@@ -57,3 +64,15 @@ jobs:
                 echo "BUILD_TAG=swatkat1977/rummage-scraper_redis:${{ inputs.docker_tag }}" >> "$GITHUB_ENV"
               fi
             fi
+
+        - name: Build and push Docker Image
+          uses: docker/build-push-action@v3
+          with:
+            context: .
+            file: docker/Dockerfile.scraper-redis
+            push: ${{ inputs.PUSH_TO_REGISTRY }}
+            no-cache: true
+            tags: ${{ env.BUILD_TAG }}
+            platforms: |
+                linux/arm64
+                linux/amd64
