@@ -8,10 +8,23 @@ on:
   # Allows manual workflow trigger
   workflow_dispatch:
     inputs:
-      push_to_registry:
+      PUSH_TO_REGISTRY:
         type: boolean
         description: Push to Registry
         required: true
+        default: false
+
+      DOCKER_TAG:
+        type: string
+        description: Docker Tag
+        required: true
+        default: 'NIGHTLY'
+
+      USE_BRANCH_AS_DOCKER_TAG:
+        type: boolean
+        description: Use branch name as docker tag
+        required: true
+        default: true
 
 jobs:
     build:
