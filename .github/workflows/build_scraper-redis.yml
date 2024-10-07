@@ -18,8 +18,10 @@ jobs:
         runs-on: ubuntu-latest
         steps:
 
-        # Checkout the repository
-        - name: Checkout code
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v2
+
+        - name: Checkout code from the repository
           uses: actions/checkout@v4
 
         - name: Login to Docker Hub
@@ -27,3 +29,18 @@ jobs:
           with:
             username: ${{ secrets.DOCKER_HUB_USERNAME }}
             password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+        - name: Determine current branch
+          run: |
+            if [[ "${{ inputs.USE_BRANCH_AS_DOCKER_TAG }}" == 'true' && $GITHUB_REF != 'refs/heads/main' ]]; then
+                echo "BUILD_TAG=swatkat1977/rummage-scraper_redis:${GITHUB_REF##*/}" >> "$GITHUB_ENV"
+                echo "|=> Docker tag : ${GITHUB_REF##*/}"
+            else
+              if [[ "${{ inputs.DOCKER_TAG }}" = "NIGHTLY" ]]; then
+                echo "|=> Docker tag : NIGHTLY"
+                echo "BUILD_TAG=swatkat1977/rummage-scraper_redis:NIGHTLY" >> "$GITHUB_ENV"
+              else
+                echo "|=> Docker tag : ${{ inputs.DOCKER_TAG }}"
+                echo "BUILD_TAG=swatkat1977/rummage-scraper_redis:${{ inputs.docker_tag }}" >> "$GITHUB_ENV"
+              fi
+            fi
