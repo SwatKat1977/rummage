@@ -263,6 +263,36 @@ class RedisClientBase:
 
         return self._client.exists(key)
 
+    def increment_field_value(self, key: any) -> int:
+        """
+        Increments the value associated with the given key in Redis.
+
+        This method checks if there is an active Redis connection and if the
+        specified key exists before attempting to increment its value. If the
+        key exists, it increments its value by 1 and returns the new value. If
+        the key does not exist, it returns None.
+
+        Args:
+            key (any): The key whose value is to be incremented. This is
+                    expected to be a string that corresponds to a field stored
+                    in the Redis database.
+
+        Returns:
+            int: The incremented value of the field after the operation.
+            None: If the field does not exist or there is no connection to
+                  Redis.
+
+        Raises:
+            RuntimeError: If there is no active connection to the Redis server.
+        """
+        if not self._client:
+            raise RuntimeError("No connection to Redis server")
+
+        if not self.field_exists(key):
+            return None
+
+        return self._client.incr(key)
+
     def _set_hash_field_value(self, key : any, field: str, value: any) -> None:
         """
         Sets the value of a specified field in a hash stored at a given key in
