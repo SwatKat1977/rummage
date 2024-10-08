@@ -33,7 +33,7 @@ jobs:
 
         - name: Set PUSH_TO_REGISTRY for scheduled run
           if: github.event_name == 'schedule'
-          run: echo "PUSH_TO_REGISTRY='true'" >> $GITHUB_ENV
+          run: echo "PUSH_TO_REGISTRY=true" >> $GITHUB_ENV
 
         - name: Set up QEMU
           uses: docker/setup-qemu-action@v3
