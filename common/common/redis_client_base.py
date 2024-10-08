@@ -291,7 +291,11 @@ class RedisClientBase:
         if not self.field_exists(key):
             return None
 
-        return self._client.incr(key)
+        try:
+            return self._client.incr(key)
+
+        except redis.exceptions.ResponseError as ex:
+            raise RuntimeError(f"ResponseError thrown: {ex}") from ex
 
     def _set_hash_field_value(self, key : any, field: str, value: any) -> None:
         """
