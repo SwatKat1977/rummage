@@ -191,6 +191,78 @@ class RedisClientBase:
         """
         return self._client.hget(key, field)
 
+    def set_field_value(self, key: any, value: any) -> None:
+        """
+        Set the value of a specific field (key) in the Redis database.
+
+        This checks if there is an active connection to the Redis server.
+        If the connection is available, it will set the value of the provided
+        key in the Redis database. If the connection is not established, it
+        raises a RuntimeError.
+
+        Args:
+            key (any): The key corresponding to the field in Redis.
+            value (any): The value to be set for the given key.
+
+        Raises:
+            RuntimeError: If there is no active connection to the Redis server.
+
+        Returns:
+            None
+        """
+
+        if not self._client:
+            raise RuntimeError("No connection to Redis server")
+
+        self._client.set(key, value)
+
+    def get_field_value(self, key: any) -> any:
+        """
+        Retrieve the value of a specific field (key) from the Redis database.
+
+        This checks if there is an active connection to the Redis server.
+        If the connection is available, it fetches the value of the provided
+        key from the Redis database. If the connection is not established, it
+        raises a RuntimeError.
+
+        Args:
+            key (any): The key corresponding to the field in Redis.
+
+        Raises:
+            RuntimeError: If there is no active connection to the Redis server.
+
+        Returns:
+            any: The value stored in Redis for the provided key. Returns None
+            if the key does not exist.
+        """
+        if not self._client:
+            raise RuntimeError("No connection to Redis server")
+
+        return self._client.get(key)
+
+    def field_exists(self, key) -> bool:
+        """
+        Check if a specific field (key) exists in the Redis database.
+
+        This checks if there is an active connection to the Redis server.
+        If the connection is available, it verifies whether the provided key
+        exists in the Redis database. If the connection is not established,
+        it raises a RuntimeError.
+
+        Args:
+            key (any): The key corresponding to the field in Redis.
+
+        Raises:
+            RuntimeError: If there is no active connection to the Redis server.
+
+        Returns:
+            bool: True if the key exists in Redis, False otherwise.
+        """
+        if not self._client:
+            raise RuntimeError("No connection to Redis server")
+
+        return self._client.exists(key)
+
     def _set_hash_field_value(self, key : any, field: str, value: any) -> None:
         """
         Sets the value of a specified field in a hash stored at a given key in
