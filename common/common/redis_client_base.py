@@ -137,7 +137,7 @@ class RedisClientBase:
         self._set_hash_field_value(key, field, value)
         self._client.hset(key, field, value)
 
-    def set_hash_field_values(self, key : any, field_values : list) -> None:
+    def set_hash_field_values(self, key : any, field_values : dict) -> None:
         """
         Sets multiple field values in a hash stored at a given key in Redis.
 
@@ -162,8 +162,7 @@ class RedisClientBase:
         if not self._client:
             raise RuntimeError("No connection to Redis server")
 
-        for field_key, field_value in field_values:
-            self._set_hash_field_value(key, field_key, field_value)
+        self._set_hash_field_mapping(key, field_values)
 
     def get_hash_field_value(self, key : any, field: str) -> any:
         """
@@ -324,6 +323,21 @@ class RedisClientBase:
         """
         try:
             self._client.hset(key, field, value)
+
+        except (redis.exceptions.ConnectionError,
+                redis.exceptions.ResponseError,
+                redis.exceptions.TimeoutError) as ex:
+            raise RuntimeError(f"Connection issue with Redis server: {ex}") from ex
+
+        except (redis.exceptions.DataError) as ex:
+            raise RuntimeError(f"Data exception caught: {ex}") from ex
+
+        except Exception as ex:
+            raise RuntimeError(f"Generic exception caught: {ex}") from ex
+
+    def _set_hash_field_mapping(self, key, value: dict) -> None:
+        try:
+            self._client.hset(key, mapping=value)
 
         except (redis.exceptions.ConnectionError,
                 redis.exceptions.ResponseError,
