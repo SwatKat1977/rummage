@@ -119,7 +119,7 @@ class RedisClientBase:
         Raises:
             RuntimeError: If there is no connection to the Redis server 
                         when attempting to set the field value.
-            
+
         Example:
             >>> obj.setHashFieldValue('user:1001', 'name', 'Alice')
             >>> obj.setHashFieldValue('user:1001', 'age', 30)
@@ -135,7 +135,6 @@ class RedisClientBase:
             raise RuntimeError("No connection to Redis server")
 
         self._set_hash_field_value(key, field, value)
-        self._client.hset(key, field, value)
 
     def set_hash_field_values(self, key : any, field_values : dict) -> None:
         """

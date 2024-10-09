@@ -2,9 +2,23 @@ import requests
 from bs4 import BeautifulSoup
 from collections import defaultdict
 import math
+import sys
+from common.redis_client_base import RedisClientBase
 
 # Dictionary to store indexed content: URL -> text content
 web_index = defaultdict(str)
+
+def connect_to_scraper_redis(host: str, port: int, password: str):
+    redis = RedisClientBase()
+
+    try:
+        redis.connect(host, port, password)
+
+    except Exception as ex:
+        print(f"EXCEPTION: {ex}")
+        return None
+
+    return redis
 
 def scrape_webpage(url):
     headers = {
@@ -72,6 +86,34 @@ urls = [
     "https://startrekfleetcommand.com/fan-art/",
     "https://www.example.com"
 ]
+
+client = connect_to_scraper_redis("localhost", 6379, "abc123")
+
+if not client.field_exists('entry_id_counter'):
+    print("entry_id_counter is not set, setting...")
+    client.set_field_value('entry_id_counter', 0)
+
+data1 = {
+    'URL': 'http://example.com',
+    'timestamp': 100,
+    'assigned_status': 'unassigned',
+    'node_assignment': 'None'
+}
+
+data2 = {
+    'URL': 'http://ibm.com',
+    'timestamp': 100,
+    'assigned_status': 'assigned',
+    'node_assignment': '234'
+}
+
+# Add entry and automatically increment entry ID
+entry: str = f"entry:{client.increment_field_value('entry_id_counter')}"
+client.set_hash_field_values(entry, data1)
+
+# Add entry and automatically increment entry ID
+entry = f"entry:{client.increment_field_value('entry_id_counter')}"
+client.set_hash_field_values(entry, data2)
 
 for url in urls:
     print(scrape_webpage(url))
