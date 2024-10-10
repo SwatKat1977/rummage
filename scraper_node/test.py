@@ -2,14 +2,79 @@ import requests
 from bs4 import BeautifulSoup
 from collections import defaultdict
 import math
-import sys
 from common.redis_client_base import RedisClientBase
+import redis
 
 # Dictionary to store indexed content: URL -> text content
 web_index = defaultdict(str)
 
+class ScraperRedisClient(RedisClientBase):
+
+    def build(self):
+        entries = [
+            {'URL': 'http://example1.com', 'timestamp': 1633000000, 'assigned_status': 'unassigned'},
+            {'URL': 'http://example2.com', 'timestamp': 1633100000, 'assigned_status': 'unassigned'},
+            {'URL': 'http://example3.com', 'timestamp': 1633200000, 'assigned_status': 'unassigned'}
+        ]
+
+        for data in entries:
+            entry_id = self._client.incr('entry_id_counter')  # Auto increment entry ID
+
+            # Store the entry in the hash
+            self._client.hset(f'entry:{entry_id}', 'URL', data['URL'])
+            self._client.hset(f'entry:{entry_id}', 'timestamp', data['timestamp'])
+            self._client.hset(f'entry:{entry_id}', 'assigned_status', data['assigned_status'])
+
+            # Add the entry to the sorted set of unassigned entries
+            self._client.zadd('entries_by_timestamp', {f'entry:{entry_id}': data['timestamp']})
+
+    def find_and_assign_oldest_entry(self):
+        while True:
+            # Get the oldest entries sorted by timestamp
+            entries = self._client.zrangebyscore('entries_by_timestamp', '-inf', '+inf')
+
+            for entry_key in entries:
+                # Watch the entry to ensure no other client modifies it
+                self._client.watch(entry_key)
+                print(f"Key : {entry_key}")
+
+                # Check if the entry is still unassigned
+                status = self._client.hget(entry_key, 'assigned_status').decode()
+                if status == 'unassigned':
+                    # Start a transaction
+                    pipe = self._client.pipeline()
+                    pipe.multi()
+
+                    # Mark the entry as assigned
+                    pipe.hset(entry_key, 'assigned_status', 'assigned')
+
+                    # Remove it from unassigned sorted set
+                    pipe.zrem('entries_by_timestamp', entry_key)
+
+                    # Add it to assigned sorted set
+                    timestamp = int(self._client.hget(entry_key, 'timestamp'))
+                    pipe.zadd('assigned_entries', {entry_key: timestamp})
+
+                    try:
+                        # Execute the transaction
+                        pipe.execute()
+
+                        # If transaction succeeds, return the entry
+                        url = self._client.hget(entry_key, 'URL').decode()
+                        print(f"Locked and moved entry: {entry_key.decode()} with URL: {url}, Timestamp: {timestamp}")
+                        return
+                    except redis.WatchError:
+                        # If the transaction fails due to modification by another client, retry
+                        continue
+
+                # Unwatch the entry if status is not 'unassigned'
+                client.unwatch()
+
+            print("No unassigned entries found.")
+            return
+
 def connect_to_scraper_redis(host: str, port: int, password: str):
-    redis = RedisClientBase()
+    redis = ScraperRedisClient()
 
     try:
         redis.connect(host, port, password)
@@ -88,6 +153,7 @@ urls = [
 ]
 
 client = connect_to_scraper_redis("localhost", 6379, "abc123")
+#client.build()
 
 if not client.field_exists('entry_id_counter'):
     print("entry_id_counter is not set, setting...")
@@ -108,13 +174,16 @@ data2 = {
 }
 
 # Add entry and automatically increment entry ID
-entry: str = f"entry:{client.increment_field_value('entry_id_counter')}"
-client.set_hash_field_values(entry, data1)
+#entry: str = f"entry:{client.increment_field_value('entry_id_counter')}"
+#client.set_hash_field_values(entry, data1)
 
 # Add entry and automatically increment entry ID
-entry = f"entry:{client.increment_field_value('entry_id_counter')}"
-client.set_hash_field_values(entry, data2)
+#entry = f"entry:{client.increment_field_value('entry_id_counter')}"
+#client.set_hash_field_values(entry, data2)
 
+client.find_and_assign_oldest_entry()
+
+'''
 for url in urls:
     print(scrape_webpage(url))
 
@@ -122,3 +191,4 @@ for url in urls:
 query = "example"
 results = search_tfidf(query)
 print("Search results using TF-IDF:", results)
+'''
