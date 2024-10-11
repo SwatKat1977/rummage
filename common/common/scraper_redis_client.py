@@ -48,7 +48,8 @@ class ScraperRedisClient(RedisClientBase):
     """
 
     KEY_DOMAIN_ENTRY_ID : str = "domain_entry_id"
-    KEY_DOMAIN_ENTRY_BY_TIMESTAMP_SET : str = "domain_entry_by_timestamp"
+    DOMAIN_ENTRY_BY_TIMESTAMP_SET : str = "domain_entries_by_timestamp"
+    DOMAIN_ENTRY_ASSIGNED_TO_NODE_SET : str = "domain_entries_assigned_to_node"
     KEY_DOMAIN_ENTRY_PREFIX : str = "NODE_ENTRY:"
 
     DOMAIN_ASSIGNMENT_STATUS_ASSIGNED  = "assigned"
@@ -110,11 +111,11 @@ class ScraperRedisClient(RedisClientBase):
             self.delete_keys_with_prefix(self.KEY_DOMAIN_ENTRY_PREFIX)
 
         self._logger.info("=> Checking '%s' sorted set...",
-                          self.KEY_DOMAIN_ENTRY_BY_TIMESTAMP_SET)
-        if self.field_exists(self.KEY_DOMAIN_ENTRY_BY_TIMESTAMP_SET):
+                          self.DOMAIN_ENTRY_BY_TIMESTAMP_SET)
+        if self.field_exists(self.DOMAIN_ENTRY_BY_TIMESTAMP_SET):
             if force:
                 self._logger.info("   Set exists, clearing due to 'force' set")
-                self.clear_sorted_set(self.KEY_DOMAIN_ENTRY_BY_TIMESTAMP_SET)
+                self.clear_sorted_set(self.DOMAIN_ENTRY_BY_TIMESTAMP_SET)
             else:
                 self._logger.info("   Set exists...")
         else:
@@ -147,7 +148,7 @@ class ScraperRedisClient(RedisClientBase):
         data : dict = {
             'URL': domain,
             'timestamp': timestamp,
-            'assigned_status': self.DOMAIN_ASSIGNMENT_STATUS_ASSIGNED,
+            'assigned_status': self.DOMAIN_ASSIGNMENT_STATUS_UNASSIGNED,
             'node_assignment': ''
         }
 
@@ -158,14 +159,14 @@ class ScraperRedisClient(RedisClientBase):
         self.set_hash_field_values(key_id, data)
 
         # Add the entry to the sorted set of unassigned entries
-        self.add_to_sorted_set(self.KEY_DOMAIN_ENTRY_BY_TIMESTAMP_SET, {key_id: timestamp})
+        self.add_to_sorted_set(self.DOMAIN_ENTRY_BY_TIMESTAMP_SET,
+                               {key_id: timestamp})
 
     def find_and_assign_oldest_entry(self):
         while True:
             # Get the oldest entries sorted by timestamp
-            entries = self._client.zrangebyscore('entries_by_timestamp',
-                                                 '-inf',
-                                                 '+inf')
+            entries = self._client.zrangebyscore(
+                self.DOMAIN_ENTRY_BY_TIMESTAMP_SET, '-inf', '+inf')
 
             for entry_key in entries:
                 # Watch the entry to ensure no other client modifies it
@@ -174,20 +175,24 @@ class ScraperRedisClient(RedisClientBase):
 
                 # Check if the entry is still unassigned
                 status = self._client.hget(entry_key, 'assigned_status').decode()
-                if status == 'unassigned':
+                print(f"Status : {status}")
+
+                if status == self.DOMAIN_ASSIGNMENT_STATUS_UNASSIGNED:
                     # Start a transaction
                     pipe = self._client.pipeline()
                     pipe.multi()
 
                     # Mark the entry as assigned
-                    pipe.hset(entry_key, 'assigned_status', 'assigned')
+                    pipe.hset(entry_key, 'assigned_status',
+                              self.DOMAIN_ASSIGNMENT_STATUS_ASSIGNED)
 
                     # Remove it from unassigned sorted set
-                    pipe.zrem('entries_by_timestamp', entry_key)
+                    pipe.zrem(self.DOMAIN_ENTRY_BY_TIMESTAMP_SET, entry_key)
 
-                    # Add it to assigned sorted set
+                    # Add it to the 'assigned' sorted set
                     timestamp = int(self._client.hget(entry_key, 'timestamp'))
-                    pipe.zadd('assigned_entries', {entry_key: timestamp})
+                    pipe.zadd(self.DOMAIN_ENTRY_ASSIGNED_TO_NODE_SET,
+                              {entry_key: timestamp})
 
                     try:
                         # Execute the transaction
@@ -198,6 +203,7 @@ class ScraperRedisClient(RedisClientBase):
                         print(f"Locked and moved entry: {entry_key.decode()} "
                               f"with URL: {url}, Timestamp: {timestamp}")
                         return
+
                     except redis.WatchError:
                         # If the transaction fails due to modification by another client, retry
                         continue
