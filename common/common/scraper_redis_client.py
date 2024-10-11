@@ -47,7 +47,7 @@ class ScraperRedisClient(RedisClientBase):
     """
 
     KEY_DOMAIN_ENTRY_ID : str = "domain_entry_id"
-    KEY_NODE_ASSIGMENTS_SET : str = "node_assignments"
+    KEY_DOMAIN_ENTRY_BY_TIMESTAMP_SET : str = "domain_entry_by_timestamp"
     KEY_DOMAIN_ENTRY_PREFIX : str = "NODE_ENTRY:"
 
     def __init__(self, logger : logging.Logger):
@@ -106,11 +106,11 @@ class ScraperRedisClient(RedisClientBase):
             self.delete_keys_with_prefix(self.KEY_DOMAIN_ENTRY_PREFIX)
 
         self._logger.info("=> Checking '%s' sorted set...",
-                          self.KEY_NODE_ASSIGMENTS_SET)
-        if self.field_exists(self.KEY_NODE_ASSIGMENTS_SET):
+                          self.KEY_DOMAIN_ENTRY_BY_TIMESTAMP_SET)
+        if self.field_exists(self.KEY_DOMAIN_ENTRY_BY_TIMESTAMP_SET):
             if force:
                 self._logger.info("   Set exists, clearing due to 'force' set")
-                self.clear_sorted_set(self.KEY_NODE_ASSIGMENTS_SET)
+                self.clear_sorted_set(self.KEY_DOMAIN_ENTRY_BY_TIMESTAMP_SET)
             else:
                 self._logger.info("   Set exists...")
         else:
