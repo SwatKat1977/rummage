@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 import logging
+import time
 import redis
 from common.redis_client_base import RedisClientBase
 
@@ -49,6 +50,9 @@ class ScraperRedisClient(RedisClientBase):
     KEY_DOMAIN_ENTRY_ID : str = "domain_entry_id"
     KEY_DOMAIN_ENTRY_BY_TIMESTAMP_SET : str = "domain_entry_by_timestamp"
     KEY_DOMAIN_ENTRY_PREFIX : str = "NODE_ENTRY:"
+
+    DOMAIN_ASSIGNMENT_STATUS_ASSIGNED  = "assigned"
+    DOMAIN_ASSIGNMENT_STATUS_UNASSIGNED  = "unassigned"
 
     def __init__(self, logger : logging.Logger):
         super().__init__()
@@ -115,6 +119,46 @@ class ScraperRedisClient(RedisClientBase):
                 self._logger.info("   Set exists...")
         else:
             self._logger.info("   Set does not exists, will be created on add")
+
+    def add_domain_entry(self, domain : str) -> None:
+        """
+        Adds a new domain entry to the system with an associated timestamp,
+        status, and assignment.
+
+        This function creates a new entry for the given domain, assigns it a
+        unique ID, and stores the entry in a hash. The entry is also added to a
+        sorted set based on its timestamp, ensuring that unassigned domain
+        entries are ordered by when they were added.
+
+        Args:
+            domain (str): The domain URL to be added as an entry.
+
+        The following actions are performed:
+            1. A current timestamp is generated and used for the entry.
+            2. The domain is assigned an 'assigned' status and left unassigned
+               to any node.
+            3. A unique entry ID is generated for the domain.
+            4. The entry is stored as a hash with the generated key.
+            5. The entry is added to a sorted set of unassigned entries,
+               ordered by timestamp.
+        """
+
+        timestamp : int = int(time.time())
+        data : dict = {
+            'URL': domain,
+            'timestamp': timestamp,
+            'assigned_status': self.DOMAIN_ASSIGNMENT_STATUS_ASSIGNED,
+            'node_assignment': ''
+        }
+
+        entry_id : int = self.increment_field_value(self.KEY_DOMAIN_ENTRY_ID)
+        key_id : str = f"{self.KEY_DOMAIN_ENTRY_PREFIX}{entry_id}"
+
+        # Store the new domain entry in the hash
+        self.set_hash_field_values(key_id, data)
+
+        # Add the entry to the sorted set of unassigned entries
+        self.add_to_sorted_set(self.KEY_DOMAIN_ENTRY_BY_TIMESTAMP_SET, {key_id: timestamp})
 
     def find_and_assign_oldest_entry(self):
         while True:
