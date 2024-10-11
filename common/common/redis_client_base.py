@@ -295,6 +295,123 @@ class RedisClientBase:
         except redis.exceptions.ResponseError as ex:
             raise RuntimeError(f"ResponseError thrown: {ex}") from ex
 
+    def add_to_sorted_set(self, key : any, value : any) -> None:
+        """
+        Adds a value to a Redis sorted set.
+
+        Args:
+            key (any): The key representing the sorted set in Redis.
+            value (any): The value to be added to the sorted set, with its
+                         associated score. This should be passed as a
+                         dictionary with `value: score`.
+
+        Example:
+            self.add_to_sorted_set("my_sorted_set", {"item1": 10})
+        """
+        self._client.zadd(key, value)
+
+    def remove_from_sorted_set(self, key : any, value : any) -> None:
+        """
+        Removes a specific value from a Redis sorted set.
+
+        Args:
+            key (any): The key representing the sorted set in Redis.
+            value (any): The value to be removed from the sorted set.
+
+        Example:
+            self.remove_from_sorted_set("my_sorted_set", "item1")
+        """
+        self._client.zrem(key, value)
+
+    def clear_sorted_set(self, key : any) -> None:
+        """
+        Removes all elements from a Redis sorted set without deleting the key
+        itself.
+
+        Args:
+            key (any): The key representing the sorted set in Redis.
+
+        Example:
+            self.clear_sorted_set("my_sorted_set")
+        """
+        self._client.zremrangebyrank(key, 0, -1)
+
+    def delete_keys_with_prefix(self, prefix : str) -> int:
+        """
+        Deletes all Redis keys that start with the given prefix.
+
+        This method uses the SCAN command to retrieve keys in batches that match
+        the specified prefix, ensuring efficient iteration over large datasets.
+        The keys are deleted in chunks until all matching keys are removed. It returns
+        the total number of keys that were deleted.
+
+        Args:
+            prefix (str): The prefix to match against Redis keys. All keys that
+                        start with this prefix will be deleted.
+
+        Returns:
+            int: The total number of keys that were deleted.
+
+        Example:
+            To delete all keys starting with 'user:':
+
+            >>> delete_keys_with_prefix('user:')
+            50  # This indicates that 50 keys were deleted.
+        """
+        cursor = 0
+        keys_deleted : int = 0
+
+        while True:
+            # Use SCAN to get keys in chunks
+            cursor, keys = self._client.scan(cursor=cursor, match=f"{prefix}*")
+
+            if keys:
+                # Delete all the keys in the current chunk
+                self._client.delete(*keys)
+                keys_deleted += len(keys)
+
+            # If cursor is 0, the scan is complete
+            if cursor == 0:
+                break
+
+        return keys_deleted
+
+    def count_keys_with_prefix(self, prefix : str) -> int:
+        """
+        Counts the number of Redis keys that start with a given prefix using
+        the SCAN command.
+
+        The method uses Redis' SCAN command to efficiently iterate through all
+        keys in the database, avoiding blocking the Redis server. It counts how
+        many keys match the specified prefix.
+
+        Args:
+            prefix (str): The prefix to match keys in Redis. The method will
+                          look for keys that begin with this prefix.
+
+        Returns:
+            int: The number of keys found that start with the given prefix.
+
+        Example:
+            num_keys = self.count_keys_with_prefix("user:")
+            print(f"Number of keys with prefix 'user:': {num_keys}")
+        """
+        cursor = 0
+        keys_found : int = 0
+
+        while True:
+            # Use SCAN to get keys in chunks
+            cursor, keys = self._client.scan(cursor=cursor, match=f"{prefix}*")
+
+            if keys:
+                keys_found += len(keys)
+
+            # If cursor is 0, the scan is complete
+            if cursor == 0:
+                break
+
+        return keys_found
+
     def _set_hash_field_value(self, key : any, field: str, value: any) -> None:
         """
         Sets the value of a specified field in a hash stored at a given key in
