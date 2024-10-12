@@ -53,7 +53,8 @@ jobs:
         - name: Determine current branch
           run: |
             if [[ "${{ inputs.USE_BRANCH_AS_DOCKER_TAG }}" == 'true' && $GITHUB_REF != 'refs/heads/main' ]]; then
-                echo "BUILD_TAG=swatkat1977/rummage-scraper_redis:${GITHUB_REF##*/}" >> "$GITHUB_ENV"
+                BUILD_TAG="swatkat1977/rummage-scraper_redis:${GITHUB_REF##*/}"
+                echo "BUILD_TAG=${BUILD_TAG}" >> "$GITHUB_ENV"
                 echo "|=> Docker tag: (Branch) $BUILD_TAG"
             else
               if [[ "${{ inputs.DOCKER_TAG }}" = "NIGHTLY" ]]; then
