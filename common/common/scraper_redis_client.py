@@ -162,7 +162,7 @@ class ScraperRedisClient(RedisClientBase):
         self.add_to_sorted_set(self.DOMAIN_ENTRY_BY_TIMESTAMP_SET,
                                {key_id: timestamp})
 
-    def find_and_assign_oldest_entry(self) -> dict:
+    def get_next_unassigned_domain_entry(self) -> dict:
         while True:
             # Get the oldest entries sorted by timestamp
             entries = self._client.zrangebyscore(

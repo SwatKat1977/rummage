@@ -97,25 +97,10 @@ urls = [
 
 client = connect_to_scraper_redis("localhost", 6379, "abc123")
 client.initialise_redis(force=False)
-#client.build()
 
-data1 = {
-    'URL': 'http://example.com',
-    'timestamp': 100,
-    'assigned_status': 'unassigned',
-    'node_assignment': 'None'
-}
-
-data2 = {
-    'URL': 'http://ibm.com',
-    'timestamp': 100,
-    'assigned_status': 'assigned',
-    'node_assignment': '234'
-}
-
-"""
 client.add_domain_entry("http://test1.com")
 client.add_domain_entry("http://test2.com")
+"""
 client.add_domain_entry("http://test3.com")
 client.add_domain_entry("http://test4.com")
 client.add_domain_entry("http://test5.com")
@@ -123,15 +108,7 @@ client.add_domain_entry("http://test6.com")
 client.add_domain_entry("http://test7.com")
 """
 
-# Add entry and automatically increment entry ID
-#entry: str = f"entry:{client.increment_field_value('entry_id_counter')}"
-#client.set_hash_field_values(entry, data1)
-
-# Add entry and automatically increment entry ID
-#entry = f"entry:{client.increment_field_value('entry_id_counter')}"
-#client.set_hash_field_values(entry, data2)
-
-print(f"[CALL] {client.find_and_assign_oldest_entry()}")
+print(f"[CALL] {client.get_next_unassigned_domain_entry()}")
 
 '''
 for url in urls:
