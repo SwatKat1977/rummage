@@ -52,10 +52,13 @@ jobs:
 
         - name: Determine current branch
           run: |
-            if [[ "${{ inputs.USE_BRANCH_AS_DOCKER_TAG }}" == 'true' && $GITHUB_REF != 'refs/heads/main' ]]; then
+            if [[ "${{ inputs.USE_BRANCH_AS_DOCKER_TAG }}" == 'true' && "${GITHUB_REF}" != 'refs/heads/main' ]]; then
+                # Extract the branch name
                 BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-                BUILD_TAG="swatkat1977/rummage-scraper_redis:$BRANCH_NAME"
-                echo "BUILD_TAG=${BUILD_TAG}" >> "$GITHUB_ENV"
+
+                # Now build the Docker tag
+                BUILD_TAG="swatkat1977/rummage-scraper_redis:${BRANCH_NAME}"
+                echo "BUILD_TAG=${BUILD_TAG}" >> "$GITHUB_ENV"  # Persist the build tag for future steps
                 echo "|=> Docker tag: (Branch) $BUILD_TAG"
             else
               if [[ "${{ inputs.DOCKER_TAG }}" = "NIGHTLY" ]]; then
