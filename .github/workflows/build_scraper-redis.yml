@@ -1,9 +1,9 @@
 name: Build Scraper Redis Docker Image
 
-# Schedule the job to run at 2 AM every day (UTC time)
+# Schedule the job to run at 92:00 AM every day (UTC time)
 on:
   schedule:
-    - cron: '0 2 * * *'  # Runs at 2 AM UTC daily
+    - cron: '0 2 * * *'
 
   # Allows manual workflow trigger
   workflow_dispatch:
@@ -31,7 +31,7 @@ jobs:
         runs-on: ubuntu-24.04
         steps:
 
-        - name: Set PUSH_TO_REGISTRY for scheduled run
+        - name: Set PUSH_TO_REGISTRY for a scheduled run
           if: github.event_name == 'schedule'
           run: echo "PUSH_TO_REGISTRY=true" >> $GITHUB_ENV
 
@@ -54,14 +54,15 @@ jobs:
           run: |
             if [[ "${{ inputs.USE_BRANCH_AS_DOCKER_TAG }}" == 'true' && $GITHUB_REF != 'refs/heads/main' ]]; then
                 echo "BUILD_TAG=swatkat1977/rummage-scraper_redis:${GITHUB_REF##*/}" >> "$GITHUB_ENV"
-                echo "|=> Docker tag : ${GITHUB_REF##*/}"
+                echo "|=> Docker tag: (Branch) ${{ env.BUILD_TAG }}"
             else
               if [[ "${{ inputs.DOCKER_TAG }}" = "NIGHTLY" ]]; then
-                echo "|=> Docker tag : NIGHTLY"
+                echo "|=> Docker tag: NIGHTLY"
                 echo "BUILD_TAG=swatkat1977/rummage-scraper_redis:NIGHTLY" >> "$GITHUB_ENV"
               else
                 echo "|=> Docker tag : ${{ inputs.DOCKER_TAG }}"
-                echo "BUILD_TAG=swatkat1977/rummage-scraper_redis:${{ inputs.docker_tag }}" >> "$GITHUB_ENV"
+                echo "BUILD_TAG=swatkat1977/rummage-scraper_redis:${{ inputs.DOCKER_TAG }}" >> "$GITHUB_ENV"
+                echo "|=> Docker tag: (Docker Tag) ${{ env.BUILD_TAG }}"
               fi
             fi
 
@@ -70,7 +71,7 @@ jobs:
           with:
             context: .
             file: docker/Dockerfile.scraper-redis
-            push: ${{ inputs.PUSH_TO_REGISTRY }}
+            push: ${{ inputs.PUSH_TO_REGISTRY == 'true' }}
             no-cache: true
             tags: ${{ env.BUILD_TAG }}
             platforms: |
