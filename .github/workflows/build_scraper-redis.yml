@@ -52,9 +52,15 @@ jobs:
 
         - name: Determine current branch
           run: |
-            if [[ "${{ inputs.USE_BRANCH_AS_DOCKER_TAG }}" == 'true' && $GITHUB_REF != 'refs/heads/main' ]]; then
-                echo "BUILD_TAG=swatkat1977/rummage-scraper_redis:${GITHUB_REF##*/}" >> "$GITHUB_ENV"
-                echo "|=> Docker tag: (Branch) ${{ env.BUILD_TAG }}"
+            if [[ "${{ inputs.USE_BRANCH_AS_DOCKER_TAG }}" == 'true' && "${GITHUB_REF}" != 'refs/heads/main' ]]; then
+                # Extract the branch name
+                BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+                echo "|=> Branch name : ${BRANCH_NAME}"
+
+                # Now build the Docker tag
+                BUILD_TAG="swatkat1977/rummage-scraper_redis:${BRANCH_NAME}"
+                echo "BUILD_TAG=${BUILD_TAG}" >> "$GITHUB_ENV"  # Persist the build tag for future steps
+                echo "|=> Docker tag: (Branch) $BUILD_TAG"
             else
               if [[ "${{ inputs.DOCKER_TAG }}" = "NIGHTLY" ]]; then
                 echo "|=> Docker tag: NIGHTLY"
@@ -62,7 +68,7 @@ jobs:
               else
                 echo "|=> Docker tag : ${{ inputs.DOCKER_TAG }}"
                 echo "BUILD_TAG=swatkat1977/rummage-scraper_redis:${{ inputs.DOCKER_TAG }}" >> "$GITHUB_ENV"
-                echo "|=> Docker tag: (Docker Tag) ${{ env.BUILD_TAG }}"
+                echo "|=> Docker tag: (Docker Tag) $BUILD_TAG"
               fi
             fi
 
@@ -71,7 +77,7 @@ jobs:
           with:
             context: .
             file: docker/Dockerfile.scraper-redis
-            push: ${{ inputs.PUSH_TO_REGISTRY == 'true' }}
+            push: ${{ inputs.PUSH_TO_REGISTRY == 'true' || inputs.PUSH_TO_REGISTRY == true }}
             no-cache: true
             tags: ${{ env.BUILD_TAG }}
             platforms: |
