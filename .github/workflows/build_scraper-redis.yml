@@ -72,15 +72,12 @@ jobs:
               fi
             fi
 
-            pushed=${{ inputs.PUSH_TO_REGISTRY == 'true' || inputs.PUSH_TO_REGISTRY == true }}
-            echo "Pushed : $pushed based on ${{ inputs.PUSH_TO_REGISTRY }}"
-
         - name: Build and push Docker Image
           uses: docker/build-push-action@v3
           with:
             context: .
             file: docker/Dockerfile.scraper-redis
-            push: ${{ inputs.PUSH_TO_REGISTRY == 'true' }}
+            push: ${{ inputs.PUSH_TO_REGISTRY == 'true' || inputs.PUSH_TO_REGISTRY == true }}
             no-cache: true
             tags: ${{ env.BUILD_TAG }}
             platforms: |
