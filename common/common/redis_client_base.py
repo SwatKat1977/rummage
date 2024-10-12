@@ -189,6 +189,44 @@ class RedisClientBase:
         """
         return self._client.hget(key, field)
 
+    def get_all_field_values(self, key: any) -> dict:
+        """
+        Retrieves all field-value pairs for a given Redis hash key.
+
+        This method fetches all the fields and their corresponding values
+        stored in the Redis hash associated with the specified key. The Redis
+        response is in bytes, so the method converts it to a dictionary with
+        UTF-8 decoded strings for easier usage in Python.
+
+        Args:
+            key (any): The Redis hash key to retrieve the field-value pairs
+                    from. Typically, this should be a string representing the
+                    hash key.
+
+        Returns:
+            dict: A dictionary containing all the field-value pairs from the
+                hash with both keys and values decoded to UTF-8 strings.
+            None: If the key does not exist or the hash is empty.
+
+        Example:
+            To retrieve all field-value pairs for the hash key 'user:profile':
+
+            >>> get_all_field_values('user:profile')
+            {'name': 'Alice', 'age': '30'}
+        """
+
+        # Since Redis returns the data as bytes, after retrieving it convert it
+        # to a proper dictionary.
+        all_values = self._client.hgetall(key)
+
+        # Invalid key, return None
+        if not all_values:
+            return None
+
+        # Decode the byte strings into a UTF-8 dictionary
+        return {key.decode('utf-8'): value.decode('utf-8')
+                for key, value in all_values.items()}
+
     def set_field_value(self, key: any, value: any) -> None:
         """
         Set the value of a specific field (key) in the Redis database.
