@@ -197,6 +197,7 @@ class ScraperRedisClient(RedisClientBase):
                         pipe.execute()
 
                         # If transaction succeeds, return the entry
+                        print(self.get_all_field_values(entry_key))
                         url = self._client.hget(entry_key, 'URL').decode()
                         print(f"Locked and moved entry: {entry_key.decode()} "
                               f"with URL: {url}, Timestamp: {timestamp}")
