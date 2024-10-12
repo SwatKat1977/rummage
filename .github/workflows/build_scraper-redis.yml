@@ -55,6 +55,7 @@ jobs:
             if [[ "${{ inputs.USE_BRANCH_AS_DOCKER_TAG }}" == 'true' && "${GITHUB_REF}" != 'refs/heads/main' ]]; then
                 # Extract the branch name
                 BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+                echo "|=> Branch name : ${BRANCH_NAME}"
 
                 # Now build the Docker tag
                 BUILD_TAG="swatkat1977/rummage-scraper_redis:${BRANCH_NAME}"
