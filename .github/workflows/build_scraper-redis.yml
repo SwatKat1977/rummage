@@ -1,9 +1,9 @@
 name: Build Scraper Redis Docker Image
 
-# Schedule the job to run at 1:40 AM every day (UTC time)
+# Schedule the job to run at 92:00 AM every day (UTC time)
 on:
   schedule:
-    - cron: '35 1 * * *'
+    - cron: '0 2 * * *'
 
   # Allows manual workflow trigger
   workflow_dispatch:
