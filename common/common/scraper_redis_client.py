@@ -171,11 +171,9 @@ class ScraperRedisClient(RedisClientBase):
             for entry_key in entries:
                 # Watch the entry to ensure no other client modifies it
                 self._client.watch(entry_key)
-                print(f"Key : {entry_key}")
 
                 # Check if the entry is still unassigned
                 status = self._client.hget(entry_key, 'assigned_status').decode()
-                print(f"Status : {status}")
 
                 if status == self.DOMAIN_ASSIGNMENT_STATUS_UNASSIGNED:
                     # Start a transaction
