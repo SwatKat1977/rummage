@@ -162,7 +162,7 @@ class ScraperRedisClient(RedisClientBase):
         self.add_to_sorted_set(self.DOMAIN_ENTRY_BY_TIMESTAMP_SET,
                                {key_id: timestamp})
 
-    def find_and_assign_oldest_entry(self):
+    def find_and_assign_oldest_entry(self) -> dict:
         while True:
             # Get the oldest entries sorted by timestamp
             entries = self._client.zrangebyscore(
@@ -197,11 +197,7 @@ class ScraperRedisClient(RedisClientBase):
                         pipe.execute()
 
                         # If transaction succeeds, return the entry
-                        print(self.get_all_field_values(entry_key))
-                        url = self._client.hget(entry_key, 'URL').decode()
-                        print(f"Locked and moved entry: {entry_key.decode()} "
-                              f"with URL: {url}, Timestamp: {timestamp}")
-                        return
+                        return self.get_all_field_values(entry_key)
 
                     except redis.WatchError:
                         # If the transaction fails due to modification by another client, retry
@@ -210,5 +206,5 @@ class ScraperRedisClient(RedisClientBase):
                 # Unwatch the entry if status is not 'unassigned'
                 self._client.unwatch()
 
-            print("No unassigned entries found.")
-            return
+            # No unassigned entries found, return None in this case.
+            return None
