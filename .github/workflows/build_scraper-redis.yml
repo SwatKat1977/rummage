@@ -73,7 +73,7 @@ jobs:
             fi
 
             pushed=${{ inputs.PUSH_TO_REGISTRY == 'true' }}
-            echo "Pushed : $pushed"
+            echo "Pushed : $pushed based on ${{ inputs.PUSH_TO_REGISTRY }}"
 
         - name: Build and push Docker Image
           uses: docker/build-push-action@v3
